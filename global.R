@@ -3,20 +3,27 @@
 library(raster)
 library(tools)
 
-# Create data directory if it doesn't exist
 dir.create("data", showWarnings = FALSE)
 
-# File paths
 tif_path <- "data/2024_30m_cdls.tif"
 zip_path <- "data/cdl_data.zip"
 zip_url  <- "https://www.nass.usda.gov/Research_and_Science/Cropland/Release/datasets/2024_30m_cdls.zip"
 
-# Only download if the raster file doesn't exist
+# Try downloading and unzipping if the file doesn't exist
 if (!file.exists(tif_path)) {
-  message("Downloading CDL ZIP (~1.6 GB)...")
-  download.file(zip_url, destfile = zip_path, mode = "wb")
-  unzip(zip_path, exdir = "data")
+  tryCatch({
+    message("Downloading USDA CDL ZIP file...")
+    download.file(zip_url, destfile = zip_path, mode = "wb")
+    message("Unzipping...")
+    unzip(zip_path, exdir = "data")
+  }, error = function(e) {
+    stop("Failed to download and unzip data: ", e$message)
+  })
 }
 
-# Load the raster
-r <- raster(tif_path)
+# Try loading the raster
+if (file.exists(tif_path)) {
+  r <- raster(tif_path)
+} else {
+  stop("Raster file not found at expected path: ", tif_path)
+}
